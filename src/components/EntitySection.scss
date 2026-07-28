@@ -24,3 +24,70 @@
   gap: $spacing-05;
   padding-top: $spacing-05;
 }
+
+// ── actions sub-list (inside lead / opportunity modals) ──────────
+.actions-sublist {
+  margin-top: $spacing-07;
+  border-top: 1px solid $border-subtle-01;
+  padding-top: $spacing-05;
+
+  &__heading {
+    @include type-style('heading-03');
+    color: $text-secondary;
+    margin: 0 0 $spacing-04 0;
+  }
+
+  &__empty {
+    @include type-style('body-short-01');
+    color: $text-placeholder;
+    margin: 0 0 $spacing-04 0;
+  }
+
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: $spacing-04;
+    padding: $spacing-04 0;
+    border-bottom: 1px solid $border-subtle-00;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &--new {
+      border-top: 1px solid $border-subtle-01;
+      border-bottom: none;
+      padding-top: $spacing-05;
+      margin-top: $spacing-02;
+    }
+
+    &--editing {
+      background: $layer-01;
+      padding: $spacing-04;
+      border-radius: 4px;
+    }
+  }
+
+  &__date {
+    @include type-style('code-01');
+    color: $text-secondary;
+    white-space: nowrap;
+    align-self: center;
+  }
+
+  &__notes {
+    @include type-style('body-short-01');
+    color: $text-primary;
+    flex: 1;
+    min-width: 120px;
+    align-self: center;
+  }
+
+  &__btns {
+    display: flex;
+    gap: $spacing-02;
+    align-items: center;
+    margin-left: auto;
+  }
+}
