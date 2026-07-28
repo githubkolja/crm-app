@@ -197,13 +197,36 @@ export async function convertToDeal(opportunityId) {
 }
 
 // ── Transformed leads (for reporting / CSV) ──────────────
-export async function getTransformedLeads(since) {
+export async function getTransformedLeads(from, to) {
   let q = supabase
     .from('leads')
     .select('*, opportunities(title, value, transformed_at, clients(name, company))')
     .eq('status', 'transformed')
     .order('transformed_at', { ascending: false });
-  if (since) q = q.gte('transformed_at', since);
+  if (from) q = q.gte('transformed_at', from);
+  if (to)   q = q.lte('transformed_at', to);
+  return q;
+}
+
+// ── Prospection actions in date range (for dashboard report) ─
+export async function getProspectionActionsInRange(from, to) {
+  let q = supabase
+    .from('prospection_actions')
+    .select('*, leads(name, company)')
+    .order('actioned_at', { ascending: false });
+  if (from) q = q.gte('actioned_at', from);
+  if (to)   q = q.lte('actioned_at', to);
+  return q;
+}
+
+// ── Commercial actions in date range (for dashboard report) ─
+export async function getCommercialActionsInRange(from, to) {
+  let q = supabase
+    .from('commercial_actions')
+    .select('*, opportunities(title, leads(name, company))')
+    .order('actioned_at', { ascending: false });
+  if (from) q = q.gte('actioned_at', from);
+  if (to)   q = q.lte('actioned_at', to);
   return q;
 }
 
