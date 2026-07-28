@@ -78,7 +78,7 @@ export async function getOpportunities() {
 export async function getDeals() {
   return supabase
     .from('opportunities')
-    .select('*')
+    .select('*, clients(id, name, company)')
     .eq('stage', 'deal')
     .order('updated_at', { ascending: false });
 }
@@ -148,17 +148,12 @@ export async function convertToDeal(opportunityId) {
     .single();
   if (oppErr) return { error: oppErr };
 
-  // 2. Mark opportunity as "deal"
-  const { error: stageErr } = await supabase
-    .from('opportunities')
-    .update({ stage: 'deal', updated_at: new Date().toISOString() })
-    .eq('id', opportunityId);
-  if (stageErr) return { error: stageErr };
+  let clientId = null;
 
-  // 3. If there's a linked lead, migrate it to a client then delete the lead
+  // 2. If there's a linked lead, migrate it to a client first
   if (opp.lead_id && opp.leads) {
     const lead = opp.leads;
-    const { error: clientErr } = await supabase
+    const { data: newClient, error: clientErr } = await supabase
       .from('clients')
       .insert({
         user_id,
@@ -167,8 +162,11 @@ export async function convertToDeal(opportunityId) {
         email: lead.email ?? null,
         phone: lead.phone ?? null,
         lead_source_id: lead.id,
-      });
+      })
+      .select('id')
+      .single();
     if (clientErr) return { error: clientErr };
+    clientId = newClient.id;
 
     // Delete the lead (prospection_actions cascade-delete automatically)
     const { error: deleteErr } = await supabase
@@ -177,6 +175,17 @@ export async function convertToDeal(opportunityId) {
       .eq('id', lead.id);
     if (deleteErr) return { error: deleteErr };
   }
+
+  // 3. Mark opportunity as "deal" and store the client reference
+  const { error: stageErr } = await supabase
+    .from('opportunities')
+    .update({
+      stage: 'deal',
+      client_id: clientId,       // survives the lead_id → NULL cascade
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', opportunityId);
+  if (stageErr) return { error: stageErr };
 
   return { error: null };
 }

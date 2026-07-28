@@ -19,7 +19,7 @@ import {
   Tag,
 } from '@carbon/react';
 import { TrashCan } from '@carbon/icons-react';
-import { getDeals, getClients, deleteOpportunity } from '../services/crmService';
+import { getDeals, deleteOpportunity } from '../services/crmService';
 import './EntitySection.scss';
 
 const HEADERS = [
@@ -32,7 +32,6 @@ const HEADERS = [
 
 function DealsSection() {
   const [deals, setDeals] = React.useState([]);
-  const [clients, setClients] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [notification, setNotification] = React.useState(null);
   const [deleteTarget, setDeleteTarget] = React.useState(null);
@@ -40,11 +39,9 @@ function DealsSection() {
 
   async function fetchAll() {
     setLoading(true);
-    const [dealsResult, clientsResult] = await Promise.all([getDeals(), getClients()]);
-    if (dealsResult.error) setNotification({ kind: 'error', message: dealsResult.error.message });
-    else setDeals(dealsResult.data ?? []);
-    if (clientsResult.error) setNotification({ kind: 'error', message: clientsResult.error.message });
-    else setClients(clientsResult.data ?? []);
+    const { data, error } = await getDeals();
+    if (error) setNotification({ kind: 'error', message: error.message });
+    else setDeals(data ?? []);
     setLoading(false);
   }
 
@@ -63,18 +60,12 @@ function DealsSection() {
     setDeleting(false);
   }
 
-  // Match deal → client via lead_source_id = deal.lead_id
-  function clientForDeal(deal) {
-    if (!deal.lead_id) return null;
-    return clients.find((c) => c.lead_source_id === deal.lead_id) ?? null;
-  }
-
   const rows = deals.map((d) => {
-    const client = clientForDeal(d);
+    const c = d.clients;   // joined via client_id FK
     return {
       id: d.id,
       title: d.title,
-      client_name: client ? `${client.name}${client.company ? ` (${client.company})` : ''}` : '—',
+      client_name: c ? `${c.name}${c.company ? ` (${c.company})` : ''}` : '—',
       value: fmtCurrency(d.value),
       closed_at: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : '—',
     };
