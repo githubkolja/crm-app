@@ -27,7 +27,7 @@ const HEADERS = [
   { key: 'company', header: 'Company' },
   { key: 'industry', header: 'Industry' },
   { key: 'contract_value', header: 'Contract Value' },
-  { key: 'created_at', header: 'Created' },
+  { key: 'updated_at', header: 'Last Updated' },
   { key: 'actions', header: '' },
 ];
 
@@ -57,23 +57,10 @@ function ClientsSection() {
 
   React.useEffect(() => { fetchClients(); }, []);
 
-  function openAdd() {
-    setSelected(null);
-    setForm(EMPTY_FORM);
-    setErrors({});
-    setFormOpen(true);
-  }
-
+  function openAdd() { setSelected(null); setForm(EMPTY_FORM); setErrors({}); setFormOpen(true); }
   function openEdit(client) {
     setSelected(client);
-    setForm({
-      name: client.name,
-      company: client.company ?? '',
-      email: client.email ?? '',
-      phone: client.phone ?? '',
-      industry: client.industry ?? '',
-      contract_value: client.contract_value ?? '',
-    });
+    setForm({ name: client.name, company: client.company ?? '', email: client.email ?? '', phone: client.phone ?? '', industry: client.industry ?? '', contract_value: client.contract_value ?? '' });
     setErrors({});
     setFormOpen(true);
   }
@@ -89,11 +76,7 @@ function ClientsSection() {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     setSaving(true);
-    const payload = {
-      ...form,
-      contract_value: form.contract_value !== '' ? Number(form.contract_value) : null,
-      ...(selected ? { id: selected.id } : {}),
-    };
+    const payload = { ...form, contract_value: form.contract_value !== '' ? Number(form.contract_value) : null, ...(selected ? { id: selected.id } : {}) };
     const { error } = await saveClient(payload);
     if (error) setNotification({ kind: 'error', message: error.message });
     else { setFormOpen(false); await fetchClients(); }
@@ -113,13 +96,15 @@ function ClientsSection() {
     return Number(v).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   }
 
+  function fmtDate(v) { return v ? new Date(v).toLocaleDateString() : '—'; }
+
   const rows = clients.map((c) => ({
     id: c.id,
     name: c.name,
     company: c.company,
     industry: c.industry ?? '—',
     contract_value: fmtCurrency(c.contract_value),
-    created_at: new Date(c.created_at).toLocaleDateString(),
+    updated_at: fmtDate(c.updated_at),
     _raw: c,
   }));
 
@@ -128,18 +113,10 @@ function ClientsSection() {
       <Grid>
         <Column lg={16} md={8} sm={4}>
           <h2 className="entity-section__title">Clients</h2>
-          {notification && (
-            <InlineNotification
-              kind={notification.kind}
-              title={notification.message}
-              onClose={() => setNotification(null)}
-            />
-          )}
+          {notification && <InlineNotification kind={notification.kind} title={notification.message} onClose={() => setNotification(null)} />}
         </Column>
         <Column lg={16} md={8} sm={4}>
-          {loading ? (
-            <Loading description="Loading clients…" withOverlay={false} />
-          ) : (
+          {loading ? <Loading description="Loading clients…" withOverlay={false} /> : (
             <DataTable rows={rows} headers={HEADERS} isSortable>
               {({ rows: tableRows, headers, getTableProps, getHeaderProps, getRowProps, onInputChange }) => (
                 <>
@@ -152,9 +129,7 @@ function ClientsSection() {
                   <Table {...getTableProps()}>
                     <TableHead>
                       <TableRow>
-                        {headers.map((h) => (
-                          <TableHeader key={h.key} {...getHeaderProps({ header: h })}>{h.header}</TableHeader>
-                        ))}
+                        {headers.map((h) => <TableHeader key={h.key} {...getHeaderProps({ header: h })}>{h.header}</TableHeader>)}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -163,14 +138,12 @@ function ClientsSection() {
                         return (
                           <TableRow key={row.id} {...getRowProps({ row })}>
                             {row.cells.map((cell) => {
-                              if (cell.info.header === 'actions') {
-                                return (
-                                  <TableCell key={cell.id} className="entity-section__actions">
-                                    <Button kind="ghost" size="sm" renderIcon={Edit} hasIconOnly iconDescription="Edit" onClick={() => openEdit(raw)} />
-                                    <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} hasIconOnly iconDescription="Delete" onClick={() => setDeleteTarget(raw)} />
-                                  </TableCell>
-                                );
-                              }
+                              if (cell.info.header === 'actions') return (
+                                <TableCell key={cell.id} className="entity-section__actions">
+                                  <Button kind="ghost" size="sm" renderIcon={Edit} hasIconOnly iconDescription="Edit" onClick={() => openEdit(raw)} />
+                                  <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} hasIconOnly iconDescription="Delete" onClick={() => setDeleteTarget(raw)} />
+                                </TableCell>
+                              );
                               return <TableCell key={cell.id}>{cell.value}</TableCell>;
                             })}
                           </TableRow>
@@ -185,15 +158,9 @@ function ClientsSection() {
         </Column>
       </Grid>
 
-      <Modal
-        open={formOpen}
-        modalHeading={selected ? 'Edit Client' : 'Add Client'}
-        primaryButtonText={saving ? 'Saving…' : 'Save'}
-        secondaryButtonText="Cancel"
-        onRequestSubmit={handleSave}
-        onRequestClose={() => setFormOpen(false)}
-        primaryButtonDisabled={saving}
-      >
+      <Modal open={formOpen} modalHeading={selected ? 'Edit Client' : 'Add Client'}
+        primaryButtonText={saving ? 'Saving…' : 'Save'} secondaryButtonText="Cancel"
+        onRequestSubmit={handleSave} onRequestClose={() => setFormOpen(false)} primaryButtonDisabled={saving}>
         <div className="entity-form">
           <TextInput id="cl-name" labelText="Name *" value={form.name} invalid={!!errors.name} invalidText={errors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <TextInput id="cl-company" labelText="Company *" value={form.company} invalid={!!errors.company} invalidText={errors.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
@@ -204,16 +171,9 @@ function ClientsSection() {
         </div>
       </Modal>
 
-      <Modal
-        open={!!deleteTarget}
-        danger
-        modalHeading="Delete Client"
-        primaryButtonText={deleting ? 'Deleting…' : 'Delete'}
-        secondaryButtonText="Cancel"
-        onRequestSubmit={handleDelete}
-        onRequestClose={() => setDeleteTarget(null)}
-        primaryButtonDisabled={deleting}
-      >
+      <Modal open={!!deleteTarget} danger modalHeading="Delete Client"
+        primaryButtonText={deleting ? 'Deleting…' : 'Delete'} secondaryButtonText="Cancel"
+        onRequestSubmit={handleDelete} onRequestClose={() => setDeleteTarget(null)} primaryButtonDisabled={deleting}>
         <p>Are you sure you want to delete <strong>{deleteTarget?.name}</strong>? This action cannot be undone.</p>
       </Modal>
     </section>

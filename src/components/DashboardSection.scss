@@ -27,9 +27,7 @@
     height: 100%;
     border-top: 4px solid $border-subtle-01;
 
-    &__icon {
-      color: $interactive;
-    }
+    &__icon { color: $interactive; }
 
     &__count {
       @include type-style('heading-07');
@@ -45,10 +43,34 @@
       margin: 0 0 $spacing-03 0;
     }
 
-    // colour-coded top border per entity type
     &--blue   { border-top-color: #0f62fe; .dashboard-tile__icon { color: #0f62fe; } }
     &--teal   { border-top-color: #007d79; .dashboard-tile__icon { color: #007d79; } }
     &--green  { border-top-color: #198038; .dashboard-tile__icon { color: #198038; } }
     &--purple { border-top-color: #6929c4; .dashboard-tile__icon { color: #6929c4; } }
+  }
+
+  // ── report section ─────────────────────────────────────
+  .report-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: $spacing-05;
+    margin-top: $spacing-10;
+    margin-bottom: $spacing-06;
+    padding-top: $spacing-07;
+    border-top: 1px solid $border-subtle-01;
+  }
+
+  .report-title {
+    @include type-style('heading-04');
+    color: $text-primary;
+    margin: 0;
+  }
+
+  .report-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: $spacing-04;
   }
 }

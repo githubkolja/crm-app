@@ -27,6 +27,7 @@ const HEADERS = [
   { key: 'client_name', header: 'Client' },
   { key: 'value', header: 'Value' },
   { key: 'closed_at', header: 'Closed' },
+  { key: 'updated_at', header: 'Last Updated' },
   { key: 'actions', header: '' },
 ];
 
@@ -52,6 +53,8 @@ function DealsSection() {
     return Number(v).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   }
 
+  function fmtDate(v) { return v ? new Date(v).toLocaleDateString() : '—'; }
+
   async function handleDelete() {
     setDeleting(true);
     const { error } = await deleteOpportunity(deleteTarget.id);
@@ -61,13 +64,14 @@ function DealsSection() {
   }
 
   const rows = deals.map((d) => {
-    const c = d.clients;   // joined via client_id FK
+    const c = d.clients;
     return {
       id: d.id,
       title: d.title,
       client_name: c ? `${c.name}${c.company ? ` (${c.company})` : ''}` : '—',
       value: fmtCurrency(d.value),
-      closed_at: d.updated_at ? new Date(d.updated_at).toLocaleDateString() : '—',
+      closed_at: fmtDate(d.transformed_at ?? d.updated_at),
+      updated_at: fmtDate(d.updated_at),
     };
   });
 
@@ -76,18 +80,10 @@ function DealsSection() {
       <Grid>
         <Column lg={16} md={8} sm={4}>
           <h2 className="entity-section__title">Deals</h2>
-          {notification && (
-            <InlineNotification
-              kind={notification.kind}
-              title={notification.message}
-              onClose={() => setNotification(null)}
-            />
-          )}
+          {notification && <InlineNotification kind={notification.kind} title={notification.message} onClose={() => setNotification(null)} />}
         </Column>
         <Column lg={16} md={8} sm={4}>
-          {loading ? (
-            <Loading description="Loading deals…" withOverlay={false} />
-          ) : (
+          {loading ? <Loading description="Loading deals…" withOverlay={false} /> : (
             <DataTable rows={rows} headers={HEADERS} isSortable>
               {({ rows: tableRows, headers, getTableProps, getHeaderProps, getRowProps, onInputChange }) => (
                 <>
@@ -99,45 +95,37 @@ function DealsSection() {
                   <Table {...getTableProps()}>
                     <TableHead>
                       <TableRow>
-                        {headers.map((h) => (
-                          <TableHeader key={h.key} {...getHeaderProps({ header: h })}>{h.header}</TableHeader>
-                        ))}
+                        {headers.map((h) => <TableHeader key={h.key} {...getHeaderProps({ header: h })}>{h.header}</TableHeader>)}
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {tableRows.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={HEADERS.length}>
-                            <span style={{ color: 'var(--cds-text-placeholder)' }}>
-                              No deals yet — convert an opportunity to create one.
-                            </span>
+                            <span style={{ color: 'var(--cds-text-placeholder)' }}>No deals yet — convert an opportunity to create one.</span>
                           </TableCell>
                         </TableRow>
-                      ) : (
-                        tableRows.map((row) => {
-                          const raw = deals.find((d) => d.id === row.id);
-                          return (
-                            <TableRow key={row.id} {...getRowProps({ row })}>
-                              {row.cells.map((cell) => {
-                                if (cell.info.header === 'actions') {
-                                  return (
-                                    <TableCell key={cell.id} className="entity-section__actions">
-                                      <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} hasIconOnly iconDescription="Delete" onClick={() => setDeleteTarget(raw)} />
-                                    </TableCell>
-                                  );
-                                }
-                                return (
-                                  <TableCell key={cell.id}>
-                                    {cell.info.header === 'closed_at'
-                                      ? <Tag type="green" size="sm">{cell.value}</Tag>
-                                      : cell.value}
-                                  </TableCell>
-                                );
-                              })}
-                            </TableRow>
-                          );
-                        })
-                      )}
+                      ) : tableRows.map((row) => {
+                        const raw = deals.find((d) => d.id === row.id);
+                        return (
+                          <TableRow key={row.id} {...getRowProps({ row })}>
+                            {row.cells.map((cell) => {
+                              if (cell.info.header === 'actions') return (
+                                <TableCell key={cell.id} className="entity-section__actions">
+                                  <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} hasIconOnly iconDescription="Delete" onClick={() => setDeleteTarget(raw)} />
+                                </TableCell>
+                              );
+                              return (
+                                <TableCell key={cell.id}>
+                                  {cell.info.header === 'closed_at'
+                                    ? <Tag type="green" size="sm">{cell.value}</Tag>
+                                    : cell.value}
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </>
@@ -147,16 +135,9 @@ function DealsSection() {
         </Column>
       </Grid>
 
-      <Modal
-        open={!!deleteTarget}
-        danger
-        modalHeading="Delete Deal"
-        primaryButtonText={deleting ? 'Deleting…' : 'Delete'}
-        secondaryButtonText="Cancel"
-        onRequestSubmit={handleDelete}
-        onRequestClose={() => setDeleteTarget(null)}
-        primaryButtonDisabled={deleting}
-      >
+      <Modal open={!!deleteTarget} danger modalHeading="Delete Deal"
+        primaryButtonText={deleting ? 'Deleting…' : 'Delete'} secondaryButtonText="Cancel"
+        onRequestSubmit={handleDelete} onRequestClose={() => setDeleteTarget(null)} primaryButtonDisabled={deleting}>
         <p>Are you sure you want to delete deal <strong>{deleteTarget?.title}</strong>? This action cannot be undone.</p>
       </Modal>
     </section>

@@ -5,11 +5,14 @@ async function getCurrentUserId() {
   return data?.user?.id;
 }
 
+const now = () => new Date().toISOString();
+
 // ── Leads ───────────────────────────────────────────────
 export async function getLeads() {
   return supabase
     .from('leads')
     .select('*')
+    .neq('status', 'transformed')
     .order('created_at', { ascending: false });
 }
 
@@ -18,7 +21,7 @@ export async function saveLead(lead) {
   if (id) {
     return supabase
       .from('leads')
-      .update({ ...fields, updated_at: new Date().toISOString() })
+      .update({ ...fields, updated_at: now() })
       .eq('id', id)
       .select()
       .single();
@@ -71,7 +74,7 @@ export async function getOpportunities() {
   return supabase
     .from('opportunities')
     .select('*, leads(name, company)')
-    .neq('stage', 'deal')
+    .not('stage', 'in', '("deal","transformed")')
     .order('created_at', { ascending: false });
 }
 
@@ -88,7 +91,7 @@ export async function saveOpportunity(opp) {
   if (id) {
     return supabase
       .from('opportunities')
-      .update({ ...fields, updated_at: new Date().toISOString() })
+      .update({ ...fields, updated_at: now() })
       .eq('id', id)
       .select()
       .single();
@@ -136,9 +139,10 @@ export async function deleteCommercialAction(id) {
   return supabase.from('commercial_actions').delete().eq('id', id);
 }
 
-// ── Convert Opportunity → Deal (and lead → client, then delete lead) ─
+// ── Convert Opportunity → Deal (marks lead + opp as 'transformed', never deletes) ─
 export async function convertToDeal(opportunityId) {
   const user_id = await getCurrentUserId();
+  const ts = now();
 
   // 1. Fetch the opportunity (with its linked lead)
   const { data: opp, error: oppErr } = await supabase
@@ -150,9 +154,10 @@ export async function convertToDeal(opportunityId) {
 
   let clientId = null;
 
-  // 2. If there's a linked lead, migrate it to a client first
+  // 2. If there's a linked lead, create a client and mark lead as 'transformed'
   if (opp.lead_id && opp.leads) {
     const lead = opp.leads;
+
     const { data: newClient, error: clientErr } = await supabase
       .from('clients')
       .insert({
@@ -168,26 +173,38 @@ export async function convertToDeal(opportunityId) {
     if (clientErr) return { error: clientErr };
     clientId = newClient.id;
 
-    // Delete the lead (prospection_actions cascade-delete automatically)
-    const { error: deleteErr } = await supabase
+    // Mark lead as transformed (keep the record)
+    const { error: leadErr } = await supabase
       .from('leads')
-      .delete()
+      .update({ status: 'transformed', transformed_at: ts, updated_at: ts })
       .eq('id', lead.id);
-    if (deleteErr) return { error: deleteErr };
+    if (leadErr) return { error: leadErr };
   }
 
-  // 3. Mark opportunity as "deal" and store the client reference
+  // 3. Mark opportunity as 'deal' and store client reference + transformed_at
   const { error: stageErr } = await supabase
     .from('opportunities')
     .update({
       stage: 'deal',
-      client_id: clientId,       // survives the lead_id → NULL cascade
-      updated_at: new Date().toISOString(),
+      client_id: clientId,
+      transformed_at: ts,
+      updated_at: ts,
     })
     .eq('id', opportunityId);
   if (stageErr) return { error: stageErr };
 
   return { error: null };
+}
+
+// ── Transformed leads (for reporting / CSV) ──────────────
+export async function getTransformedLeads(since) {
+  let q = supabase
+    .from('leads')
+    .select('*, opportunities(title, value, transformed_at, clients(name, company))')
+    .eq('status', 'transformed')
+    .order('transformed_at', { ascending: false });
+  if (since) q = q.gte('transformed_at', since);
+  return q;
 }
 
 // ── Clients ──────────────────────────────────────────────
@@ -203,7 +220,7 @@ export async function saveClient(client) {
   if (id) {
     return supabase
       .from('clients')
-      .update({ ...fields, updated_at: new Date().toISOString() })
+      .update({ ...fields, updated_at: now() })
       .eq('id', id)
       .select()
       .single();

@@ -41,16 +41,16 @@ const HEADERS = [
   { key: 'value', header: 'Value' },
   { key: 'stage', header: 'Stage' },
   { key: 'expected_close_date', header: 'Expected Close' },
+  { key: 'updated_at', header: 'Last Updated' },
   { key: 'actions', header: '' },
 ];
 
-const STAGE_OPTIONS = ['prospect', 'proposal', 'negotiation', 'closed-won', 'closed-lost', 'deal'];
+const STAGE_OPTIONS = ['prospect', 'proposal', 'negotiation', 'closed-won', 'closed-lost'];
 const CACTION_TYPES = ['demo', 'proposal', 'negotiation', 'follow_up', 'other'];
 
 const EMPTY_OPP_FORM = { title: '', value: '', stage: 'prospect', expected_close_date: '', lead_id: '' };
 const EMPTY_ACTION_FORM = { type: 'demo', notes: '', actioned_at: new Date().toISOString().slice(0, 10) };
 
-// ── commercial actions sub-list ────────────────────────────────────
 function CommercialActionsList({ opportunityId, onError }) {
   const [actions, setActions] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -68,15 +68,8 @@ function CommercialActionsList({ opportunityId, onError }) {
 
   React.useEffect(() => { load(); }, [opportunityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function startEdit(a) {
-    setEditingId(a.id);
-    setForm({ type: a.type, notes: a.notes ?? '', actioned_at: a.actioned_at });
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-    setForm(EMPTY_ACTION_FORM);
-  }
+  function startEdit(a) { setEditingId(a.id); setForm({ type: a.type, notes: a.notes ?? '', actioned_at: a.actioned_at }); }
+  function cancelEdit() { setEditingId(null); setForm(EMPTY_ACTION_FORM); }
 
   async function handleSave() {
     setSaving(true);
@@ -96,36 +89,32 @@ function CommercialActionsList({ opportunityId, onError }) {
   return (
     <div className="actions-sublist">
       <h5 className="actions-sublist__heading">Commercial Actions</h5>
-      {loading ? (
-        <Loading small description="Loading…" withOverlay={false} />
-      ) : (
+      {loading ? <Loading small description="Loading…" withOverlay={false} /> : (
         <>
           {actions.length === 0 && <p className="actions-sublist__empty">No actions yet.</p>}
-          {actions.map((a) =>
-            editingId === a.id ? (
-              <div key={a.id} className="actions-sublist__row actions-sublist__row--editing">
-                <Select id={`ctype-${a.id}`} labelText="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                  {CACTION_TYPES.map((t) => <SelectItem key={t} value={t} text={t.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())} />)}
-                </Select>
-                <TextInput id={`cdate-${a.id}`} labelText="Date" type="date" value={form.actioned_at} onChange={(e) => setForm({ ...form, actioned_at: e.target.value })} />
-                <TextArea id={`cnotes-${a.id}`} labelText="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
-                <div className="actions-sublist__btns">
-                  <Button size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
-                  <Button size="sm" kind="ghost" onClick={cancelEdit}>Cancel</Button>
-                </div>
+          {actions.map((a) => editingId === a.id ? (
+            <div key={a.id} className="actions-sublist__row actions-sublist__row--editing">
+              <Select id={`ctype-${a.id}`} labelText="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                {CACTION_TYPES.map((t) => <SelectItem key={t} value={t} text={t.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())} />)}
+              </Select>
+              <TextInput id={`cdate-${a.id}`} labelText="Date" type="date" value={form.actioned_at} onChange={(e) => setForm({ ...form, actioned_at: e.target.value })} />
+              <TextArea id={`cnotes-${a.id}`} labelText="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+              <div className="actions-sublist__btns">
+                <Button size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+                <Button size="sm" kind="ghost" onClick={cancelEdit}>Cancel</Button>
               </div>
-            ) : (
-              <div key={a.id} className="actions-sublist__row">
-                <Tag type="purple" size="sm">{a.type.replace('_', ' ')}</Tag>
-                <span className="actions-sublist__date">{a.actioned_at}</span>
-                {a.notes && <span className="actions-sublist__notes">{a.notes}</span>}
-                <div className="actions-sublist__btns">
-                  <Button kind="ghost" size="sm" renderIcon={Edit} hasIconOnly iconDescription="Edit" onClick={() => startEdit(a)} />
-                  <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} hasIconOnly iconDescription="Delete" onClick={() => handleDelete(a.id)} />
-                </div>
+            </div>
+          ) : (
+            <div key={a.id} className="actions-sublist__row">
+              <Tag type="purple" size="sm">{a.type.replace('_', ' ')}</Tag>
+              <span className="actions-sublist__date">{a.actioned_at}</span>
+              {a.notes && <span className="actions-sublist__notes">{a.notes}</span>}
+              <div className="actions-sublist__btns">
+                <Button kind="ghost" size="sm" renderIcon={Edit} hasIconOnly iconDescription="Edit" onClick={() => startEdit(a)} />
+                <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} hasIconOnly iconDescription="Delete" onClick={() => handleDelete(a.id)} />
               </div>
-            )
-          )}
+            </div>
+          ))}
           {editingId === null && (
             <div className="actions-sublist__row actions-sublist__row--new">
               <Select id="new-cact-type" labelText="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
@@ -144,7 +133,6 @@ function CommercialActionsList({ opportunityId, onError }) {
   );
 }
 
-// ── main opportunities section ─────────────────────────────────────
 function OpportunitiesSection() {
   const [opps, setOpps] = React.useState([]);
   const [leads, setLeads] = React.useState([]);
@@ -175,22 +163,10 @@ function OpportunitiesSection() {
 
   React.useEffect(() => { fetchAll(); }, []);
 
-  function openAdd() {
-    setSelected(null);
-    setForm(EMPTY_OPP_FORM);
-    setErrors({});
-    setFormOpen(true);
-  }
-
+  function openAdd() { setSelected(null); setForm(EMPTY_OPP_FORM); setErrors({}); setFormOpen(true); }
   function openEdit(opp) {
     setSelected(opp);
-    setForm({
-      title: opp.title,
-      value: opp.value ?? '',
-      stage: opp.stage,
-      expected_close_date: opp.expected_close_date ?? '',
-      lead_id: opp.lead_id ?? '',
-    });
+    setForm({ title: opp.title, value: opp.value ?? '', stage: opp.stage, expected_close_date: opp.expected_close_date ?? '', lead_id: opp.lead_id ?? '' });
     setErrors({});
     setFormOpen(true);
   }
@@ -205,12 +181,7 @@ function OpportunitiesSection() {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     setSaving(true);
-    const payload = {
-      ...form,
-      value: form.value !== '' ? Number(form.value) : null,
-      lead_id: form.lead_id || null,
-      ...(selected ? { id: selected.id } : {}),
-    };
+    const payload = { ...form, value: form.value !== '' ? Number(form.value) : null, lead_id: form.lead_id || null, ...(selected ? { id: selected.id } : {}) };
     const { error } = await saveOpportunity(payload);
     if (error) setNotification({ kind: 'error', message: error.message });
     else { setFormOpen(false); await fetchAll(); }
@@ -242,8 +213,9 @@ function OpportunitiesSection() {
     return Number(v).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   }
 
+  function fmtDate(v) { return v ? new Date(v).toLocaleDateString() : '—'; }
+
   function getLeadLabel(opp) {
-    // The joined leads object comes from Supabase select with relation
     if (opp.leads) return `${opp.leads.name}${opp.leads.company ? ` (${opp.leads.company})` : ''}`;
     return '—';
   }
@@ -255,7 +227,7 @@ function OpportunitiesSection() {
     value: fmtCurrency(o.value),
     stage: o.stage,
     expected_close_date: o.expected_close_date ?? '—',
-    created_at: new Date(o.created_at).toLocaleDateString(),
+    updated_at: fmtDate(o.updated_at),
     _raw: o,
   }));
 
@@ -264,18 +236,10 @@ function OpportunitiesSection() {
       <Grid>
         <Column lg={16} md={8} sm={4}>
           <h2 className="entity-section__title">Opportunities</h2>
-          {notification && (
-            <InlineNotification
-              kind={notification.kind}
-              title={notification.message}
-              onClose={() => setNotification(null)}
-            />
-          )}
+          {notification && <InlineNotification kind={notification.kind} title={notification.message} onClose={() => setNotification(null)} />}
         </Column>
         <Column lg={16} md={8} sm={4}>
-          {loading ? (
-            <Loading description="Loading opportunities…" withOverlay={false} />
-          ) : (
+          {loading ? <Loading description="Loading opportunities…" withOverlay={false} /> : (
             <DataTable rows={rows} headers={HEADERS} isSortable>
               {({ rows: tableRows, headers, getTableProps, getHeaderProps, getRowProps, onInputChange }) => (
                 <>
@@ -288,9 +252,7 @@ function OpportunitiesSection() {
                   <Table {...getTableProps()}>
                     <TableHead>
                       <TableRow>
-                        {headers.map((h) => (
-                          <TableHeader key={h.key} {...getHeaderProps({ header: h })}>{h.header}</TableHeader>
-                        ))}
+                        {headers.map((h) => <TableHeader key={h.key} {...getHeaderProps({ header: h })}>{h.header}</TableHeader>)}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -299,17 +261,15 @@ function OpportunitiesSection() {
                         return (
                           <TableRow key={row.id} {...getRowProps({ row })}>
                             {row.cells.map((cell) => {
-                              if (cell.info.header === 'actions') {
-                                return (
-                                  <TableCell key={cell.id} className="entity-section__actions">
-                                    <Button kind="ghost" size="sm" renderIcon={Edit} hasIconOnly iconDescription="Edit" onClick={() => openEdit(raw)} />
-                                    {raw.stage !== 'deal' && (
-                                      <Button kind="ghost" size="sm" renderIcon={Checkmark} hasIconOnly iconDescription="Convert to Deal" onClick={() => setDealTarget(raw)} />
-                                    )}
-                                    <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} hasIconOnly iconDescription="Delete" onClick={() => setDeleteTarget(raw)} />
-                                  </TableCell>
-                                );
-                              }
+                              if (cell.info.header === 'actions') return (
+                                <TableCell key={cell.id} className="entity-section__actions">
+                                  <Button kind="ghost" size="sm" renderIcon={Edit} hasIconOnly iconDescription="Edit" onClick={() => openEdit(raw)} />
+                                  {raw.stage !== 'deal' && (
+                                    <Button kind="ghost" size="sm" renderIcon={Checkmark} hasIconOnly iconDescription="Convert to Deal" onClick={() => setDealTarget(raw)} />
+                                  )}
+                                  <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} hasIconOnly iconDescription="Delete" onClick={() => setDeleteTarget(raw)} />
+                                </TableCell>
+                              );
                               return <TableCell key={cell.id}>{cell.value}</TableCell>;
                             })}
                           </TableRow>
@@ -324,74 +284,37 @@ function OpportunitiesSection() {
         </Column>
       </Grid>
 
-      {/* Opportunity form modal */}
-      <Modal
-        open={formOpen}
-        modalHeading={selected ? 'Edit Opportunity' : 'Add Opportunity'}
-        primaryButtonText={saving ? 'Saving…' : 'Save'}
-        secondaryButtonText="Cancel"
-        onRequestSubmit={handleSave}
-        onRequestClose={() => setFormOpen(false)}
-        primaryButtonDisabled={saving}
-        size="lg"
-      >
+      <Modal open={formOpen} modalHeading={selected ? 'Edit Opportunity' : 'Add Opportunity'}
+        primaryButtonText={saving ? 'Saving…' : 'Save'} secondaryButtonText="Cancel"
+        onRequestSubmit={handleSave} onRequestClose={() => setFormOpen(false)}
+        primaryButtonDisabled={saving} size="lg">
         <div className="entity-form">
           <TextInput id="opp-title" labelText="Title *" value={form.title} invalid={!!errors.title} invalidText={errors.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           <TextInput id="opp-value" labelText="Value ($)" type="number" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
           <Select id="opp-stage" labelText="Stage" value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })}>
-            {STAGE_OPTIONS.map((s) => (
-              <SelectItem key={s} value={s} text={s.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} />
-            ))}
+            {STAGE_OPTIONS.map((s) => <SelectItem key={s} value={s} text={s.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} />)}
           </Select>
           <TextInput id="opp-close" labelText="Expected Close Date" type="date" value={form.expected_close_date} onChange={(e) => setForm({ ...form, expected_close_date: e.target.value })} />
-
-          {/* Lead dropdown */}
           <Select id="opp-lead" labelText="Linked Lead" value={form.lead_id} onChange={(e) => setForm({ ...form, lead_id: e.target.value })}>
             <SelectItem value="" text="— None —" />
-            {leads.map((l) => (
-              <SelectItem key={l.id} value={l.id} text={`${l.name}${l.company ? ` (${l.company})` : ''}`} />
-            ))}
+            {leads.map((l) => <SelectItem key={l.id} value={l.id} text={`${l.name}${l.company ? ` (${l.company})` : ''}`} />)}
           </Select>
-
-          {/* Commercial actions — only when editing */}
-          {selected && (
-            <CommercialActionsList
-              opportunityId={selected.id}
-              onError={(msg) => setNotification({ kind: 'error', message: msg })}
-            />
-          )}
+          {selected && <CommercialActionsList opportunityId={selected.id} onError={(msg) => setNotification({ kind: 'error', message: msg })} />}
         </div>
       </Modal>
 
-      {/* Convert to Deal confirm modal */}
-      <Modal
-        open={!!dealTarget}
-        modalHeading="Convert to Deal"
-        primaryButtonText={converting ? 'Converting…' : 'Convert to Deal'}
-        secondaryButtonText="Cancel"
-        onRequestSubmit={handleConvertToDeal}
-        onRequestClose={() => setDealTarget(null)}
-        primaryButtonDisabled={converting}
-      >
+      <Modal open={!!dealTarget} modalHeading="Convert to Deal"
+        primaryButtonText={converting ? 'Converting…' : 'Convert to Deal'} secondaryButtonText="Cancel"
+        onRequestSubmit={handleConvertToDeal} onRequestClose={() => setDealTarget(null)} primaryButtonDisabled={converting}>
         <p>
           Convert <strong>{dealTarget?.title}</strong> to a deal?
-          {dealTarget?.lead_id && (
-            <> The linked lead will be <strong>migrated to Clients</strong> automatically.</>
-          )}
+          {dealTarget?.lead_id && <> The linked lead will be <strong>migrated to Clients</strong> and marked as transformed.</>}
         </p>
       </Modal>
 
-      {/* Delete confirm modal */}
-      <Modal
-        open={!!deleteTarget}
-        danger
-        modalHeading="Delete Opportunity"
-        primaryButtonText={deleting ? 'Deleting…' : 'Delete'}
-        secondaryButtonText="Cancel"
-        onRequestSubmit={handleDelete}
-        onRequestClose={() => setDeleteTarget(null)}
-        primaryButtonDisabled={deleting}
-      >
+      <Modal open={!!deleteTarget} danger modalHeading="Delete Opportunity"
+        primaryButtonText={deleting ? 'Deleting…' : 'Delete'} secondaryButtonText="Cancel"
+        onRequestSubmit={handleDelete} onRequestClose={() => setDeleteTarget(null)} primaryButtonDisabled={deleting}>
         <p>Are you sure you want to delete <strong>{deleteTarget?.title}</strong>? This action cannot be undone.</p>
       </Modal>
     </section>
