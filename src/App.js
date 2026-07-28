@@ -59,7 +59,7 @@ function App() {
       <div className="app-container">
         <Header aria-label="Lead Force">
           <SkipToContent />
-          <HeaderName href="#" prefix="IBM">Lead Force</HeaderName>
+          <HeaderName href="#" prefix="Newgroupe">Lead Force</HeaderName>
           <HeaderNavigation aria-label="Main navigation">
             {NAV_ITEMS.map(({ key, label }) => (
               <HeaderMenuItem

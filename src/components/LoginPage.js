@@ -40,7 +40,7 @@ function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <p className="login-card__eyebrow">IBM CRM</p>
+        <p className="login-card__eyebrow">Newgroupe Lead Force</p>
         <h1 className="login-card__title">Sign in to continue</h1>
         <p className="login-card__body">Access your leads, opportunities, and clients.</p>
 
