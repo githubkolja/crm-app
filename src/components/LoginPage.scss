@@ -1,0 +1,64 @@
+@use '@carbon/react/scss/spacing' as *;
+@use '@carbon/react/scss/type' as *;
+@use '@carbon/react/scss/theme' as *;
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $background;
+}
+
+.login-card {
+  background: $layer-01;
+  padding: $spacing-10;
+  max-width: 480px;
+  width: 100%;
+  border: 1px solid $border-subtle-01;
+
+  &__eyebrow {
+    @include type-style('label-01');
+    color: $text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.32px;
+    margin: 0 0 $spacing-04 0;
+  }
+
+  &__title {
+    @include type-style('heading-05');
+    color: $text-primary;
+    margin: 0 0 $spacing-04 0;
+  }
+
+  &__body {
+    @include type-style('body-02');
+    color: $text-secondary;
+    margin: 0 0 $spacing-07 0;
+  }
+
+  &__error {
+    @include type-style('body-compact-01');
+    color: $support-error;
+    margin: 0 0 $spacing-05 0;
+  }
+
+  &__info {
+    @include type-style('body-compact-01');
+    color: $support-success;
+    margin: 0 0 $spacing-05 0;
+  }
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-05;
+  padding-top: $spacing-05;
+
+  &__actions {
+    display: flex;
+    gap: $spacing-03;
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,26 @@
+@use '@carbon/react/scss/spacing' as *;
+@use '@carbon/react/scss/type' as *;
+@use '@carbon/react/scss/theme' as *;
+
+.entity-section {
+  padding: $spacing-08 0 $spacing-10;
+
+  &__title {
+    @include type-style('heading-05');
+    color: $text-primary;
+    margin: 0 0 $spacing-07 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: $spacing-02;
+    justify-content: flex-end;
+  }
+}
+
+.entity-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-05;
+  padding-top: $spacing-05;
+}
