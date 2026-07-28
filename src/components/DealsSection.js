@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Button,
   DataTable,
   Table,
   TableHead,
@@ -10,13 +11,15 @@ import {
   TableToolbar,
   TableToolbarContent,
   TableToolbarSearch,
+  Modal,
   InlineNotification,
   Loading,
   Grid,
   Column,
   Tag,
 } from '@carbon/react';
-import { getDeals, getClients } from '../services/crmService';
+import { TrashCan } from '@carbon/icons-react';
+import { getDeals, getClients, deleteOpportunity } from '../services/crmService';
 import './EntitySection.scss';
 
 const HEADERS = [
@@ -24,6 +27,7 @@ const HEADERS = [
   { key: 'client_name', header: 'Client' },
   { key: 'value', header: 'Value' },
   { key: 'closed_at', header: 'Closed' },
+  { key: 'actions', header: '' },
 ];
 
 function DealsSection() {
@@ -31,23 +35,32 @@ function DealsSection() {
   const [clients, setClients] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [notification, setNotification] = React.useState(null);
+  const [deleteTarget, setDeleteTarget] = React.useState(null);
+  const [deleting, setDeleting] = React.useState(false);
 
-  React.useEffect(() => {
-    async function fetchAll() {
-      setLoading(true);
-      const [dealsResult, clientsResult] = await Promise.all([getDeals(), getClients()]);
-      if (dealsResult.error) setNotification({ kind: 'error', message: dealsResult.error.message });
-      else setDeals(dealsResult.data ?? []);
-      if (clientsResult.error) setNotification({ kind: 'error', message: clientsResult.error.message });
-      else setClients(clientsResult.data ?? []);
-      setLoading(false);
-    }
-    fetchAll();
-  }, []);
+  async function fetchAll() {
+    setLoading(true);
+    const [dealsResult, clientsResult] = await Promise.all([getDeals(), getClients()]);
+    if (dealsResult.error) setNotification({ kind: 'error', message: dealsResult.error.message });
+    else setDeals(dealsResult.data ?? []);
+    if (clientsResult.error) setNotification({ kind: 'error', message: clientsResult.error.message });
+    else setClients(clientsResult.data ?? []);
+    setLoading(false);
+  }
+
+  React.useEffect(() => { fetchAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function fmtCurrency(v) {
     if (v == null || v === '') return '—';
     return Number(v).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    const { error } = await deleteOpportunity(deleteTarget.id);
+    if (error) setNotification({ kind: 'error', message: error.message });
+    else { setDeleteTarget(null); await fetchAll(); }
+    setDeleting(false);
   }
 
   // Match deal → client via lead_source_id = deal.lead_id
@@ -110,17 +123,29 @@ function DealsSection() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        tableRows.map((row) => (
-                          <TableRow key={row.id} {...getRowProps({ row })}>
-                            {row.cells.map((cell) => (
-                              <TableCell key={cell.id}>
-                                {cell.info.header === 'closed_at'
-                                  ? <Tag type="green" size="sm">{cell.value}</Tag>
-                                  : cell.value}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))
+                        tableRows.map((row) => {
+                          const raw = deals.find((d) => d.id === row.id);
+                          return (
+                            <TableRow key={row.id} {...getRowProps({ row })}>
+                              {row.cells.map((cell) => {
+                                if (cell.info.header === 'actions') {
+                                  return (
+                                    <TableCell key={cell.id} className="entity-section__actions">
+                                      <Button kind="danger--ghost" size="sm" renderIcon={TrashCan} hasIconOnly iconDescription="Delete" onClick={() => setDeleteTarget(raw)} />
+                                    </TableCell>
+                                  );
+                                }
+                                return (
+                                  <TableCell key={cell.id}>
+                                    {cell.info.header === 'closed_at'
+                                      ? <Tag type="green" size="sm">{cell.value}</Tag>
+                                      : cell.value}
+                                  </TableCell>
+                                );
+                              })}
+                            </TableRow>
+                          );
+                        })
                       )}
                     </TableBody>
                   </Table>
@@ -130,6 +155,19 @@ function DealsSection() {
           )}
         </Column>
       </Grid>
+
+      <Modal
+        open={!!deleteTarget}
+        danger
+        modalHeading="Delete Deal"
+        primaryButtonText={deleting ? 'Deleting…' : 'Delete'}
+        secondaryButtonText="Cancel"
+        onRequestSubmit={handleDelete}
+        onRequestClose={() => setDeleteTarget(null)}
+        primaryButtonDisabled={deleting}
+      >
+        <p>Are you sure you want to delete deal <strong>{deleteTarget?.title}</strong>? This action cannot be undone.</p>
+      </Modal>
     </section>
   );
 }

@@ -57,9 +57,9 @@ function App() {
   return (
     <Theme theme="white">
       <div className="app-container">
-        <Header aria-label="IBM CRM">
+        <Header aria-label="Lead Force">
           <SkipToContent />
-          <HeaderName href="#" prefix="IBM">CRM</HeaderName>
+          <HeaderName href="#" prefix="IBM">Lead Force</HeaderName>
           <HeaderNavigation aria-label="Main navigation">
             {NAV_ITEMS.map(({ key, label }) => (
               <HeaderMenuItem
