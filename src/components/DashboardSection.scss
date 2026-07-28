@@ -25,15 +25,18 @@
     padding: $spacing-07;
     background: $layer-01;
     height: 100%;
+    border-top: 4px solid $border-subtle-01;
 
     &__icon {
       color: $interactive;
     }
 
     &__count {
-      @include type-style('heading-06');
+      @include type-style('heading-07');
       color: $text-primary;
       margin: 0;
+      font-size: 2.5rem;
+      line-height: 1;
     }
 
     &__label {
@@ -41,5 +44,11 @@
       color: $text-secondary;
       margin: 0 0 $spacing-03 0;
     }
+
+    // colour-coded top border per entity type
+    &--blue   { border-top-color: #0f62fe; .dashboard-tile__icon { color: #0f62fe; } }
+    &--teal   { border-top-color: #007d79; .dashboard-tile__icon { color: #007d79; } }
+    &--green  { border-top-color: #198038; .dashboard-tile__icon { color: #198038; } }
+    &--purple { border-top-color: #6929c4; .dashboard-tile__icon { color: #6929c4; } }
   }
 }

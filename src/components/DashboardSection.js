@@ -6,20 +6,21 @@ import {
   Column,
   Loading,
 } from '@carbon/react';
-import { UserFollow, Partnership, User } from '@carbon/icons-react';
-import { getLeads, getOpportunities, getClients } from '../services/crmService';
+import { UserFollow, Partnership, Catalog, User } from '@carbon/icons-react';
+import { getLeads, getOpportunities, getDeals, getClients } from '../services/crmService';
 import './DashboardSection.scss';
 
 function DashboardSection({ setActiveSection }) {
-  const [counts, setCounts] = React.useState({ leads: 0, opportunities: 0, clients: 0 });
+  const [counts, setCounts] = React.useState({ leads: 0, opportunities: 0, deals: 0, clients: 0 });
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    Promise.all([getLeads(), getOpportunities(), getClients()]).then(
-      ([l, o, c]) => {
+    Promise.all([getLeads(), getOpportunities(), getDeals(), getClients()]).then(
+      ([l, o, d, c]) => {
         setCounts({
           leads: l.data?.length ?? 0,
           opportunities: o.data?.length ?? 0,
+          deals: d.data?.length ?? 0,
           clients: c.data?.length ?? 0,
         });
         setLoading(false);
@@ -28,9 +29,10 @@ function DashboardSection({ setActiveSection }) {
   }, []);
 
   const tiles = [
-    { key: 'leads', label: 'Leads', icon: UserFollow, count: counts.leads, section: 'leads' },
-    { key: 'opportunities', label: 'Opportunities', icon: Partnership, count: counts.opportunities, section: 'opportunities' },
-    { key: 'clients', label: 'Clients', icon: User, count: counts.clients, section: 'clients' },
+    { key: 'leads',         label: 'Leads',         icon: UserFollow,  count: counts.leads,         section: 'leads',         color: 'blue' },
+    { key: 'opportunities', label: 'Opportunities',  icon: Partnership, count: counts.opportunities, section: 'opportunities', color: 'teal' },
+    { key: 'deals',         label: 'Deals',          icon: Catalog,     count: counts.deals,         section: 'deals',         color: 'green' },
+    { key: 'clients',       label: 'Clients',        icon: User,        count: counts.clients,       section: 'clients',       color: 'purple' },
   ];
 
   return (
@@ -38,16 +40,16 @@ function DashboardSection({ setActiveSection }) {
       <Grid>
         <Column lg={16} md={8} sm={4}>
           <h1 className="dashboard-title">CRM Dashboard</h1>
-          <p className="dashboard-subtitle">Manage your leads, opportunities, and clients.</p>
+          <p className="dashboard-subtitle">Manage your leads, opportunities, deals and clients.</p>
         </Column>
         {loading ? (
           <Column lg={16} md={8} sm={4}>
             <Loading description="Loading counts…" withOverlay={false} />
           </Column>
         ) : (
-          tiles.map(({ key, label, icon: Icon, count, section }) => (
-            <Column key={key} lg={5} md={4} sm={4}>
-              <Tile className="dashboard-tile">
+          tiles.map(({ key, label, icon: Icon, count, section, color }) => (
+            <Column key={key} lg={4} md={4} sm={4}>
+              <Tile className={`dashboard-tile dashboard-tile--${color}`}>
                 <div className="dashboard-tile__icon">
                   <Icon size={32} />
                 </div>

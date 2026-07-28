@@ -71,7 +71,16 @@ export async function getOpportunities() {
   return supabase
     .from('opportunities')
     .select('*, leads(name, company)')
+    .neq('stage', 'deal')
     .order('created_at', { ascending: false });
+}
+
+export async function getDeals() {
+  return supabase
+    .from('opportunities')
+    .select('*')
+    .eq('stage', 'deal')
+    .order('updated_at', { ascending: false });
 }
 
 export async function saveOpportunity(opp) {
@@ -127,7 +136,7 @@ export async function deleteCommercialAction(id) {
   return supabase.from('commercial_actions').delete().eq('id', id);
 }
 
-// ── Convert Opportunity → Deal (and lead → client) ───────
+// ── Convert Opportunity → Deal (and lead → client, then delete lead) ─
 export async function convertToDeal(opportunityId) {
   const user_id = await getCurrentUserId();
 
@@ -146,7 +155,7 @@ export async function convertToDeal(opportunityId) {
     .eq('id', opportunityId);
   if (stageErr) return { error: stageErr };
 
-  // 3. If there's a linked lead, migrate it to a client
+  // 3. If there's a linked lead, migrate it to a client then delete the lead
   if (opp.lead_id && opp.leads) {
     const lead = opp.leads;
     const { error: clientErr } = await supabase
@@ -160,6 +169,13 @@ export async function convertToDeal(opportunityId) {
         lead_source_id: lead.id,
       });
     if (clientErr) return { error: clientErr };
+
+    // Delete the lead (prospection_actions cascade-delete automatically)
+    const { error: deleteErr } = await supabase
+      .from('leads')
+      .delete()
+      .eq('id', lead.id);
+    if (deleteErr) return { error: deleteErr };
   }
 
   return { error: null };

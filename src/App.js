@@ -16,6 +16,7 @@ import LoginPage from './components/LoginPage';
 import DashboardSection from './components/DashboardSection';
 import LeadsSection from './components/LeadsSection';
 import OpportunitiesSection from './components/OpportunitiesSection';
+import DealsSection from './components/DealsSection';
 import ClientsSection from './components/ClientsSection';
 import './App.scss';
 
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'leads', label: 'Leads' },
   { key: 'opportunities', label: 'Opportunities' },
+  { key: 'deals', label: 'Deals' },
   { key: 'clients', label: 'Clients' },
 ];
 
@@ -46,6 +48,7 @@ function App() {
     switch (activeSection) {
       case 'leads': return <LeadsSection />;
       case 'opportunities': return <OpportunitiesSection />;
+      case 'deals': return <DealsSection />;
       case 'clients': return <ClientsSection />;
       default: return <DashboardSection setActiveSection={setActiveSection} />;
     }
