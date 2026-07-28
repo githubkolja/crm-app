@@ -127,7 +127,6 @@ function DashboardSection({ setActiveSection }) {
   }, [period]);
 
   function handleDownload() {
-    const label = PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? period;
     downloadCSV(toCSV(reportRows), `transformed-leads-${period}-${new Date().toISOString().slice(0, 10)}.csv`);
   }
 
